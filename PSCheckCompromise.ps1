@@ -32,6 +32,7 @@ $tasks=@"
 
 ##########################################
 
+# Function to colorfully log the output to the screen, and also to a log file
 function Write-AndLog(){
         Param
     (
@@ -46,6 +47,7 @@ function Write-AndLog(){
 }
 
 
+# Main function, only calls the others.
 function Test-IOCs {
 
     Write-AndLog "[*] Starting IOC check on target host $hostname [*]" -Color "Yellow"
@@ -57,6 +59,8 @@ function Test-IOCs {
 
 }
 
+
+# Check if the given paths (files or folders) exists in the system
 function Test-Paths($paths_obj){
     Write-AndLog "  [+] Starting Path check [+]" -Color "Yellow"
     foreach ($path in $paths_obj) {
@@ -70,6 +74,8 @@ function Test-Paths($paths_obj){
 
 }
 
+
+#Check for the existence of registry properties in given registry hives
 function Test-Registry($reg_obj){
     Write-AndLog "  [+] Starting Registry check [+]" -Color "Yellow"
     foreach ($registry in $reg_obj) {
@@ -89,10 +95,12 @@ function Test-Registry($reg_obj){
 
 }
 
+# Check if the given scheduled tasks exists in the system
 function Test-Tasks($task_obj){
 
     Write-AndLog "  [+] Starting Scheduled Task check [+]" -Color "Yellow"
 
+    #schtasks.exe was used to be compatible with Powershell 2.0 (Windows 7), since it doesn't have Get-ScheduledTask by default 
     $tasks = schtasks.exe /query /fo csv | Convertfrom-csv | Select-Object -Property N* -ExpandProperty N*
 
     foreach ($task in $task_obj){
@@ -106,6 +114,8 @@ function Test-Tasks($task_obj){
     }
 }
 
+
+# Displays content of the C:\ and C:\ Folders, listing only directories (hidden or not)
 function Get-CFolder(){
 
     Write-AndLog "  [+] Listing folders in C:\ and C:\Temp[+]" -Color "Yellow"
@@ -125,8 +135,10 @@ function Get-CFolder(){
    
 }
 
+# Calls the main function
 Test-IOCs
 
+# Makes a calculus based on the amount of IOCs found. If the total is greater than $pesoTotal, or if all the individual are greater or equal to the specific type, it will conclude that there are high chances of compromise.
 if((($pathsFound -ge $pesoPath) -And ($tasksFound -And $pesoTask) -And ($registriesFound -ge $pesoRegistry)) -Or ($pathsFound + $tasksFound + $registriesFound -ge $pesoTotal)) {
     Write-AndLog "`n[--] High chances of being compromised [--]" -Color "Red"
 } else {
